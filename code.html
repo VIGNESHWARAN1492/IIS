@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>XML File Uploader</title>
+</head>
+<body>
+  <h2>Download & Upload XML File</h2>
+
+  <button onclick="downloadXML()">Download XML</button>
+  <br><br>
+
+  <input type="file" id="fileInput" accept=".xml" />
+  <button onclick="uploadXML()">Upload Updated XML</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/@azure/storage-blob@latest"></script>
+  <script>
+    const blobSasUrl = "https://stxml01.blob.core.windows.net/studentdata?sp=r&st=2025-09-03T09:29:18Z&se=2025-09-03T17:44:18Z&sv=2024-11-04&sr=c&sig=5dKy%2FPN69BlP4xmOJdafgnt84X%2F3rKsB4X%2BC3mBgM04%3D";
+    const blobName = "StudentInfo.xml";
+
+    async function downloadXML() {
+      const response = await fetch(`${blobSasUrl}/${blobName}`);
+      const text = await response.text();
+      const blob = new Blob([text], { type: "text/xml" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = blobName;
+      link.click();
+    }
+
+    async function uploadXML() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Please select a file");
+
+      const { BlobServiceClient } = window.azureStorageBlob;
+      const blobServiceClient = new BlobServiceClient(blobSasUrl);
+      const containerClient = blobServiceClient.getContainerClient("");
+      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+      await blockBlobClient.uploadBrowserData(file, {
+        blobHTTPHeaders: { blobContentType: "text/xml" }
+      });
+
+      alert("File uploaded successfully!");
+    }
+  </script>
+</body>
+</html>
